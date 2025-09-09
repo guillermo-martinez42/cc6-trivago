@@ -1,0 +1,184 @@
+**Ingeniería en Sistemas, Informática y Ciencias de la Computación**
+**Ciencias de la Computación VI – Bases de Datos**
+**2/9/2025**
+
+**PROYECTO 1**
+
+El proyecto consiste en la creación de un sistema distribuido de base de datos que permita la
+integración de tres tipos de sitios: Sistemas de Reserva, Administración de Aerolíneas y Emisores de Tarjetas de Crédito con el fin de administrar la venta boletos aéreos. A cada grupo se le asignará uno de los tres tipos de sitio, y su tarea consiste en desarrollar el sistema de acuerdo con la descripción que se dará a continuación el cual deberá integrarlo al resto de sitios. Dado de que se trata de una aplicación académica, vamos a realizar varias suposiciones con el objetivo de simplificar el proyecto.
+
+Sistema de Reserva: Central Reservation Systems (CRS) Este sistema será la herramienta para la
+venta de los boletos. Dado el lugar de salida, el lugar de llegada y la fecha de partida, deberá verificar sobre todas las aerolíneas los vuelos disponibles. Como resultado de esta consulta deberá generar una vista de estos vuelos para que el usuario escoja el horario y la aerolínea con la que desea viajar. Luego de que el usuario escogió el vuelo deberá mostrar los asientos disponibles para dicho vuelo y después que el usuario elija su asiento deberá realizarse el cobro mediante una tarjeta de crédito y por último emitir el boleto. Es necesario llevar un registro de los usuarios, los datos mínimos que se deben de almacenar son: email, contraseña, nombre, número documento de viaje.
+
+Aerolínea: Se utiliza para definir las rutas las cuales se identifican por el código de la aerolíneay el
+número de vuelo,además poseen la información del aeropuerto origen, aeropuerto destino, hora de salida, distancia y tiempo de vuelo. Un viaje se identifica por la ruta y la fecha, es labor de la aerolínea asignarle el avión y la tripulación y precio. Se debe almacenar los datos de sus empleados (tripulación), debiendo almacenar nombre, puesto (piloto, copiloto, azafata, etc.), tiempo de pertenecer a la empresa, horas de vuelo, contacto en caso de emergencia, nacionalidad, idiomas que domina (normalmente es más de uno). Para cada aeronave, es necesario contar con los datos básicos, por ejemplo: matrícula, marca, modelo, capacidad tanto de peso, como de pasajeros. También se debe llevar control de la distribución de los asientos los cuales se identifican un numero de fila (1,2,3 ... ) y la posición (A, B, C... ), para esto deberá registrar cuantas filas posee el avión y proveer una imagen donde se muestre dicha información (4 asientos por fila y 20 filas por avión).
+
+Tarjeta de Crédito: Está aplicación servirá para la administración de las tarjetas de crédito. Contará
+con las opciones para registro de las tarjetas emitidas: Número, nombre del titular, fecha de vencimiento, número de seguridad, monto autorizado y monto disponible. Además, debe registrar
+todas las transacciones autorizadas para una tarjeta de crédito (consumos y pagos). Cuando reciba una solicitud de autorización verificará que la tarjeta sea válida, que los datos sean correctos, que no
+esté vencida y que tenga disponibilidad, entonces enviará el número de autorización o DENEGADO.
+
+**Consultas remotas:** Las aerolíneas deberá proveer la información al Sistema de Reserva de los
+vuelos disponibles y los emisores de tarjeta deberán proveer la autorización de compras. Las
+consultas se harán utilizado un WebService (API-REST) implementado mediante llamadas a scripts
+devolverán los resultados usando el estándar XML y JSON.
+
+**Registro de Aerolíneas y Emisor de Tarjeta de Crédito:** Es necesario en cada sistema de
+reservación implementar un mantenimiento para el registro de las aerolíneas y los emisores de tarjeta
+de crédito de modo que conozca el código, nombre, host y el nombre de los scripts que implementan
+las consultas y procesos.
+
+Aerolinea:
+BD Local
+Consulta de vuelos y reserva de boleto
+
+Tarjeta de Crédito:
+BD Local
+Autorización de compras
+
+Sistema de Reservas:
+BD Local
+
+La consulta de vuelos disponibles debe realizarse sobre todas las aerolíneas y la aprobación del pago con el emisor de la tarjeta de crédito
+
+A continuación, aparece el formato de las llamadas a scripts y el formato de los resultados para lo cual deberá cumplir lo siguiente:
+
+- Aeropuerto es un código de 3 caracteres y aerolínea un código de 2 caracteres (IATA)
+- Números de vuelo es un entero de 3 posiciones.
+- Para las fechas usar el formato yyyymmdd y para las horas hhmm (ISO 8601)
+- En la reservación aparece el nombre del pasajero que reserva el boleto.
+- El identificador de los emisores de tarjeta de crédito 15 caracteres
+- Los números de tarjeta 16 dígitos (sin guiones)
+- Para la fecha de vencimiento usar el formato: yyyymm
+- El código de seguridad 3 dígitos
+- Los asientos se identifican desde 1A a 20D.
+
+Para obtener los vuelos disponibles dado origen, destino y fecha del vuelo:
+http://aerolinea/script_lista_vuelos?origen=GUA&destino=FLW&fecha=20210824&formato=JSON
+
+XML
+<lista_vuelos>
+    <aerolinea>GU</aerolinea>
+    <fecha>20210824</fecha>
+    <origen>GUA</origen>
+    <destino>FLW</destino>
+    <vuelo>
+    <numero>123</numero>
+    <horaz>1400</horaz>
+    <precio>600</precio>
+    </vuelo>
+    <vuelo>
+    <numero>124</numero>
+    <horaz>1800</horaz>
+    <precio>600</precio>
+    </vuelo>
+    </lista_vuelos>
+
+JSON
+{ "lista_vuelos" :
+    { "aerolinea" : "GQ",
+    "fecha" : "20210824",
+    "origen" : "GW",
+    "destino" : "FLM",
+    "vuelos" :
+    { { "numero" : "123",
+    "horaz" : "1400",
+    "precio" : "600",
+    }
+    { "numero" : "124",
+    "horaz" : "1800",
+    "precio" : "650",
+    }
+}
+}
+
+El listado de asientos disponibles dado el vuelo:
+http://aerolinea.script_lista_asientos?aerolinea=GUA&vuelo=123&fecha=20210824&formato=JSON
+
+XML
+<lista_asientos>
+    <aerolinea>GIF/aerolinea>
+    <numero>123</numero>
+    <fecha>20210824</fecha>
+    <origin>SUN</origin>
+    <design>FIM</design>
+    <avion>Airbus A320<avion>
+    <asiento>
+    <file>1</file>
+    <position>A</position>
+    </asiento>
+    <asiento>
+    <file>1</file>
+    <position>B</position>
+    </asiento>
+    <asiento>
+    <file>3</file>
+    <position>C</position>
+    </asiento>
+</lista_asientos>
+
+JSON
+{ "lista_asientos": {
+    "aerolinea": "GU",
+    "numero": "123",
+    "fecha": "20210624",
+    "origin": "GU",
+    "design": "FIM",
+    "avion": "Airbus A320",
+    "asientos": {
+    ("file": "1", "position": "A",
+    ("file": "1", "position": "B",
+    ("file": "3", "position": "C")
+    }
+    }
+}
+
+Para obtener el número de boleto asignado:
+http://aerolinea.script_reserva?aerolinea=GUA&vuelo=123&fecha=20210824&asiento=1&A&nombre=JuanPerez&formato=JSON
+
+XML
+<boleto>
+    <aerolinea>GIF/aerolinea>
+    <vuelo>123</vuelo>
+    <fecha>20210824</fecha>
+    <horra>1400</horra>
+    <numero>123456789</numero>
+</boleto>
+
+JSON
+{ "boleto": {
+    "aerolinea": "GU",
+    "vuelo": "123",
+    "fecha": "20210824",
+    "horra": "1400",
+    "numero": "123456789"
+    }
+}
+
+Para solicitar la autorización del pago:
+http://emisor/autorizacion/?tarjeta=1234987612349876&nombre=JUANPEREZ&fecha\_venc=2022048
+num_seguridad=123&monto=600&tienda=MYBOOKING&formato=JSON
+
+XML
+<autorizacion>
+    <emisor>YISR</emisor>
+    <tarjeta>1234987612349876</tarjeta>
+    <status>APROBADO</status>
+    <numero>654321</numero>
+</autorizacion>
+
+JSON
+{ "autorizacion": {
+    "emisor": "YISR",
+    "tarjeta": "1234987612349876",
+    "status": "APROBADO",
+    "numero": "654321"
+    }
+}
+
+El status será APROBADO ó DENEGADO, si es denegado el número es 0.
+
+Aspectos Generales:
+1. Fechas de Entrega: 14 de octubre de 2025.
+2. Grupos de 2 integrantes.
+3. El día de la entrega final deberá mostrar funcionando el sistema completo, diagrama E/R y manuales de usuario.
