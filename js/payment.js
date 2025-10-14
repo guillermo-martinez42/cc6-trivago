@@ -156,11 +156,13 @@ function processReservation(authResult) {
             url: '/api/reserva',
             method: 'GET',
             data: {
+                user_id: currentUser.id,
                 aerolinea: flight.aerolinea,
                 vuelo: flight.numero,
                 fecha: formattedDate,
                 asiento: seat,
                 nombre: (currentUser.full_name || currentUser.name).replace(/\s+/g, ''),
+                precio: flight.precio,
                 formato: 'JSON'
             }
         });
@@ -419,81 +421,158 @@ $(document).ready(function() {
     });
 });
 
-// Generate ticket PDF (simplified version)
+// Generate ticket PDF
 function generateTicketPDF() {
+    const { jsPDF } = window.jspdf;
     const tickets = JSON.parse(localStorage.getItem('userTickets') || '[]')
         .filter(t => t.userId === currentUser.id)
-        .slice(-currentBooking.passengers); // Get latest tickets
-    
-    let pdfContent = `
-BOLETO ELECTRÓNICO
-===================
+        .slice(-currentBooking.passengers); // Get latest tickets for the booking
 
-`;
+    if (tickets.length === 0) {
+        showToast('No se encontraron tickets para descargar', 'error');
+        return;
+    }
+
+    const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: [210, 99] // Standard ticket size
+    });
     
     tickets.forEach((ticket, index) => {
+        if (index > 0) {
+            doc.addPage();
+        }
+
         const flight = ticket.vuelo;
         const origenInfo = DataHelper.getAeropuerto(flight.origen);
         const destinoInfo = DataHelper.getAeropuerto(flight.destino);
-        const horaLlegada = DataHelper.calcularHoraLlegada(flight.hora_salida, flight.duracion);
+
+        // --- PDF Design ---
+        doc.setFillColor(30, 88, 140); // Dark Blue
+        doc.rect(0, 0, 210, 99, 'F');
         
-        pdfContent += `
-BOLETO ${index + 1}
------------
-Número de boleto: ${ticket.numero}
-Pasajero: ${ticket.pasajero}
-Documento: ${ticket.documento}
+        // Left Side
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(16);
+        doc.text('SkyReserva', 10, 15);
+        doc.setFontSize(10);
+        doc.text('Boarding Pass', 10, 20);
 
-DETALLES DEL VUELO
-Aerolínea: ${flight.aerolinea}
-Vuelo: ${flight.codigo_vuelo}
-Fecha: ${formatDate(flight.fecha)}
-Ruta: ${origenInfo.nombre} → ${destinoInfo.nombre}
-Salida: ${DataHelper.formatTime(flight.hora_salida)}
-Llegada: ${horaLlegada}
-Asiento: ${ticket.asiento}
-Aeronave: ${flight.avion}
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Passenger', 10, 30);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(ticket.pasajero.toUpperCase(), 10, 36);
 
-INFORMACIÓN DE PAGO
-Precio: $${ticket.precio}
-Autorización: ${ticket.autorizacion}
-Emisor: ${ticket.emisor}
-Fecha de compra: ${formatDate(ticket.fechaReserva)}
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('From', 10, 45);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text(`${origenInfo.codigo}`, 10, 52);
+        doc.setFontSize(8);
+        doc.text(origenInfo.ciudad, 10, 57);
 
-${index < tickets.length - 1 ? '\n\n' : ''}
-`;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('To', 60, 45);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(14);
+        doc.text(`${destinoInfo.codigo}`, 60, 52);
+        doc.setFontSize(8);
+        doc.text(destinoInfo.ciudad, 60, 57);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Date', 10, 68);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(formatDateForPDF(flight.fecha), 10, 74);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Departure', 50, 68);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(DataHelper.formatTime(flight.hora_salida), 50, 74);
+        
+        // Dotted line separator
+        doc.setLineDashPattern([1, 1], 0);
+        doc.setDrawColor(255, 255, 255);
+        doc.line(140, 5, 140, 94);
+        doc.setLineDashPattern([], 0);
+
+        // Right Side (Stub)
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('TRIVAGO', 145, 15);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Flight', 145, 25);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(flight.codigo_vuelo, 145, 31);
+        
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Seat', 180, 25);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(12);
+        doc.text(ticket.asiento, 180, 31);
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.text('Passenger', 145, 40);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text(ticket.pasajero.toUpperCase(), 145, 46);
+
+        // QR Code
+        const qrContainer = document.createElement('div');
+        new QRCode(qrContainer, {
+            text: `TICKET:${ticket.numero},FLIGHT:${flight.codigo_vuelo},SEAT:${ticket.asiento}`,
+            width: 40,
+            height: 40,
+            colorDark : "#ffffff",
+            colorLight : "#1e588c",
+        });
+
+        // Get data from canvas instead of img for reliability
+        const canvas = qrContainer.querySelector('canvas');
+        if (canvas) {
+            const qrImage = canvas.toDataURL('image/png');
+            doc.addImage(qrImage, 'PNG', 155, 55, 40, 40);
+        } else {
+            console.error('QR Code canvas not found!');
+        }
     });
-    
-    pdfContent += `
-TÉRMINOS Y CONDICIONES
-- Presentar identificación válida en el aeropuerto
-- Llegar 2 horas antes para vuelos internacionales
-- 1 hora antes para vuelos domésticos
-- Boleto no transferible
 
-¡Buen viaje!
-SkyReserva CRS
-`;
-    
-    // Create downloadable text file (in a real app, this would be a PDF)
-    const blob = new Blob([pdfContent], { type: 'text/plain' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `boleto-${tickets[0].numero}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    window.URL.revokeObjectURL(url);
-    
+    doc.save(`boleto-${tickets[0].numero}.pdf`);
     showToast('Boleto descargado correctamente', 'success');
 }
 
 // Utility functions
 function formatDate(dateString) {
     const date = new Date(dateString);
-    return date.toLocaleDateString('es-GT', {
+    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+    const correctedDate = new Date(date.getTime() + userTimezoneOffset);
+    return correctedDate.toLocaleDateString('es-GT', {
         weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+    });
+}
+
+function formatDateForPDF(dateString) {
+    const date = new Date(dateString);
+    const userTimezoneOffset = date.getTimezoneOffset() * 60000;
+    const correctedDate = new Date(date.getTime() + userTimezoneOffset);
+    return correctedDate.toLocaleDateString('en-US', {
         year: 'numeric',
         month: 'long',
         day: 'numeric'

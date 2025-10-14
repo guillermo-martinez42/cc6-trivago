@@ -2,6 +2,7 @@ import os
 import psycopg2
 import psycopg2.extras
 import uuid
+from datetime import datetime
 from flask import Flask, jsonify, request, send_from_directory
 from flask_bcrypt import Bcrypt
 from dotenv import load_dotenv
@@ -135,57 +136,95 @@ def login_user():
         print(f"Error during login: {e}")
         return jsonify({"error": "An internal error occurred"}), 500
 
-@app.route('/api/bookings', methods=['POST'])
-def create_booking():
-    data = request.get_json()
-    user_id, flight_id, seat_number = data.get('user_id'), data.get('flight_id'), data.get('seat_number')
-    if not all([user_id, flight_id, seat_number]):
-        return jsonify({"error": "Missing required fields"}), 400
+@app.route('/api/users/<int:user_id>/bookings', methods=['GET'])
+def get_user_bookings(user_id):
+    print(f"Fetching bookings for user_id: {user_id}")
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM bookings WHERE flight_id = %s AND seat_number = %s;", (flight_id, seat_number))
-        if cursor.fetchone():
-            return jsonify({"error": "Seat already booked"}), 409
-        ticket_number = str(uuid.uuid4().hex)[:10].upper()
-        cursor.execute("INSERT INTO bookings (user_id, flight_id, seat_number, ticket_number) VALUES (%s, %s, %s, %s) RETURNING id;", (user_id, flight_id, seat_number, ticket_number))
-        new_booking_id = cursor.fetchone()[0]
-        conn.commit()
+        cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute('SELECT * FROM bookings WHERE user_id = %s ORDER BY flight_date DESC', (user_id,))
+        bookings = cursor.fetchall()
         cursor.close()
         conn.close()
-        return jsonify({"message": "Booking successful!", "booking_id": new_booking_id, "ticket_number": ticket_number}), 201
+        print(f"Found {len(bookings)} bookings.")
+
+        bookings_list = []
+        for booking in bookings:
+            booking_dict = dict(booking)
+            if 'flight_date' in booking_dict and booking_dict['flight_date']:
+                booking_dict['flight_date'] = booking_dict['flight_date'].isoformat()
+            if 'booking_time' in booking_dict and booking_dict['booking_time']:
+                booking_dict['booking_time'] = booking_dict['booking_time'].isoformat()
+            bookings_list.append(booking_dict)
+
+        print(f"Returning bookings: {bookings_list}")
+        return jsonify(bookings_list)
     except Exception as e:
-        print(f"Error creating booking: {e}")
+        print(f"Error fetching user bookings: {e}")
         return jsonify({"error": "An internal error occurred"}), 500
 
 @app.route('/api/reserva', methods=['GET'])
 def create_ticket():
     """
-    Creates a ticket reservation according to the spec format.
-    Expected parameters: aerolinea, vuelo, fecha, asiento, nombre, formato
+    Creates a ticket reservation and saves it to the database.
+    Expected parameters: aerolinea, vuelo, fecha, asiento, nombre, user_id, precio, formato
     """
-    aerolinea = request.args.get('aerolinea', 'AA')
-    vuelo = request.args.get('vuelo', '926')
-    fecha = request.args.get('fecha', '20251115')
-    asiento = request.args.get('asiento', '1A')
-    nombre = request.args.get('nombre', 'JuanPerez')
-    formato = request.args.get('formato', 'JSON')
-    
-    # Generate a mock ticket number
-    ticket_number = str(uuid.uuid4().hex)[:9].upper()
-    
-    # Mock response according to spec (note: spec has typo "horra" instead of "hora")
-    response = {
-        "boleto": {
-            "aerolinea": aerolinea,
-            "vuelo": vuelo,
-            "fecha": fecha,
-            "horra": "1400",  # Using spec's typo "horra" to match exactly
-            "numero": ticket_number
+    user_id = request.args.get('user_id')
+    aerolinea = request.args.get('aerolinea')
+    vuelo = request.args.get('vuelo')
+    fecha_str = request.args.get('fecha')
+    asiento = request.args.get('asiento')
+    nombre = request.args.get('nombre')
+    precio = request.args.get('precio')
+
+    if not all([user_id, aerolinea, vuelo, fecha_str, asiento, nombre, precio]):
+        return jsonify({"error": "Missing required fields for booking"}), 400
+
+    try:
+        ticket_number = str(uuid.uuid4().hex)[:10].upper()
+        flight_date = datetime.strptime(fecha_str, '%Y%m%d').date()
+        flight_id = int(vuelo)
+        flight_code = f"{aerolinea}{vuelo}"
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "SELECT id FROM bookings WHERE flight_code = %s AND flight_date = %s AND seat_number = %s;",
+            (flight_code, flight_date, asiento)
+        )
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({"error": f"Seat {asiento} already booked for this flight"}), 409
+
+        cursor.execute(
+            """
+            INSERT INTO bookings (user_id, flight_id, flight_code, flight_date, seat_number, passenger_name, ticket_number, price) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+            """,
+            (int(user_id), flight_id, flight_code, flight_date, asiento, nombre, ticket_number, float(precio))
+        )
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        response = {
+            "boleto": {
+                "aerolinea": aerolinea,
+                "vuelo": vuelo,
+                "fecha": fecha_str,
+                "horra": "1400",
+                "numero": ticket_number
+            }
         }
-    }
-    
-    return jsonify(response), 201
+        return jsonify(response), 201
+
+    except psycopg2.Error as db_err:
+        print(f"Database error creating booking: {db_err}")
+        return jsonify({"error": "A database error occurred"}), 500
+    except Exception as e:
+        print(f"Error creating ticket/booking: {e}")
+        return jsonify({"error": "An internal error occurred"}), 500
 
 # --- 📝 MOCK PAYMENT ENDPOINT ---
 @app.route('/api/autorizacion', methods=['GET'])
@@ -203,7 +242,7 @@ def authorize_payment():
     formato = request.args.get('formato', 'JSON')
     
     # Simple mock logic: A specific card number is always approved.
-    if tarjeta == "1234567812345678":
+    if tarjeta == "4242424242424242":
         response = {
             "autorizacion": {
                 "emisor": "VISA",

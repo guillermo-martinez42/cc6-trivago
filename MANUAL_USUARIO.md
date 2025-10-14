@@ -1,8 +1,8 @@
-# Manual de Usuario - SkyReserva CRS
+# Manual de Usuario - TRIVAGO CRS
 
 ## Introducción
 
-Bienvenido a **SkyReserva CRS**, su sistema de reservas de vuelos en línea. Este manual le guiará paso a paso para realizar una reserva exitosa.
+Bienvenido a **TRIVAGO CRS**, su sistema de reservas de vuelos en línea. Este manual le guiará paso a paso para realizar una reserva exitosa.
 
 ## Primeros Pasos
 
@@ -152,8 +152,8 @@ Si el pago es aprobado:
 
 ### Descargar Boleto
 1. Haga clic en **"Descargar Boleto"**
-2. Se descargará un archivo de texto con:
-   - Número de boleto
+2. Se descargará un archivo **PDF** con:
+   - Número de boleto y código QR
    - Detalles del vuelo
    - Información del pasajero
    - Datos del asiento
@@ -161,7 +161,7 @@ Si el pago es aprobado:
 
 ### Información del Boleto
 Su boleto electrónico incluye:
-- **Número único**: Para identificación en el aeropuerto
+- **Número único y código QR**: Para identificación en el aeropuerto
 - **Código de vuelo**: Aerolínea y número
 - **Fecha y horarios**: Salida y llegada
 - **Asiento asignado**: Fila y posición
@@ -177,7 +177,7 @@ Su boleto electrónico incluye:
 - **Imprimir boleto**: Aunque es electrónico, recomendamos imprimirlo
 
 ### En el Aeropuerto
-- Presente su boleto y documento en el counter de check-in
+- Presente su boleto (impreso o en su dispositivo) y documento en el counter de check-in
 - Diríjase a la puerta de embarque indicada
 - El asiento mostrado en su boleto está garantizado
 
@@ -219,7 +219,7 @@ Su boleto electrónico incluye:
 ## Contacto y Soporte
 
 Para asistencia adicional:
-- **Email técnico**: soporte@skyreserva.com
+- **Email técnico**: soporte@trivago-crs.com
 - **Teléfono**: +502 2XXX-XXXX
 - **Horario**: Lunes a viernes, 8:00 AM - 6:00 PM
 
@@ -232,5 +232,5 @@ Para asistencia adicional:
 
 ---
 
-**¡Gracias por usar SkyReserva CRS!**  
+**¡Gracias por usar TRIVAGO CRS!**  
 Esperamos que tenga una excelente experiencia de viaje.

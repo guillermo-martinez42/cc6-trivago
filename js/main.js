@@ -59,6 +59,10 @@ function setupEventListeners() {
     $('#login-form').submit(handleLogin);
     $('#register-form').submit(handleRegister);
     $('#flight-search-form').submit(handleFlightSearch);
+    $('#my-tickets-btn').click(handleShowTickets);
+
+    // Explicitly handle tickets modal close
+    $('#close-tickets-modal').click(() => hideModal('#tickets-modal'));
     
     // Results filtering and sorting
     $('#sort-filter').change(sortFlights);
@@ -468,6 +472,75 @@ function removeToast(toastId) {
     const toast = $(`#${toastId}`);
     toast.addClass('removing');
     setTimeout(() => toast.remove(), 300);
+}
+
+// Show user's tickets
+function handleShowTickets() {
+    if (!currentUser) {
+        showToast('Debe iniciar sesión para ver sus boletos', 'warning');
+        return;
+    }
+
+    const ticketsList = $('#tickets-list');
+    ticketsList.html('<div class="text-center py-8"><div class="animate-spin text-blue-600 text-4xl mb-4"><i class="fas fa-spinner"></i></div><p class="text-gray-800">Cargando sus boletos...</p></div>');
+    showModal('#tickets-modal');
+
+    $.ajax({
+        url: `/api/users/${currentUser.id}/bookings`,
+        method: 'GET',
+        success: function(bookings) {
+            console.log("Bookings received:", bookings); // Debugging line
+            if (bookings.length === 0) {
+                ticketsList.html(`
+                    <div class="text-center py-12">
+                        <i class="fas fa-ticket-alt text-6xl text-gray-400 mb-4"></i>
+                        <h3 class="text-xl font-semibold text-gray-600">No tiene boletos</h3>
+                        <p class="text-gray-500">Cuando compre un boleto, aparecerá aquí.</p>
+                    </div>
+                `);
+                return;
+            }
+
+            let ticketsHTML = '';
+            bookings.forEach(booking => {
+                ticketsHTML += createTicketCard(booking);
+            });
+            ticketsList.html(ticketsHTML);
+        },
+        error: function(xhr) {
+            ticketsList.html('<p class="text-center text-red-500">Error al cargar sus boletos.</p>');
+            showToast('Error al cargar sus boletos', 'error');
+        }
+    });
+}
+
+function createTicketCard(booking) {
+    const flightDate = new Date(booking.flight_date).toLocaleDateString('es-GT', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        timeZone: 'UTC'
+    });
+
+    return `
+        <div class="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex justify-between items-start">
+                <div>
+                    <h4 class="font-bold text-lg text-blue-600">Vuelo ${booking.flight_code}</h4>
+                    <p class="text-sm text-gray-500">Número de Boleto: <span class="font-semibold text-gray-700">${booking.ticket_number}</span></p>
+                </div>
+                <div class="text-right">
+                     <p class="font-semibold text-gray-800">${flightDate}</p>
+                     <p class="text-sm text-gray-600">Asiento: <span class="font-bold text-lg text-gray-900">${booking.seat_number}</span></p>
+                </div>
+            </div>
+            <div class="border-t mt-3 pt-3 flex justify-between items-center text-sm">
+                 <p class="text-gray-600">Pasajero: <span class="font-semibold">${booking.passenger_name}</span></p>
+                 <p class="text-gray-600">Precio Pagado: <span class="font-bold text-green-600">$${parseFloat(booking.price).toFixed(2)}</span></p>
+            </div>
+        </div>
+    `;
 }
 
 function formatCardNumber() {

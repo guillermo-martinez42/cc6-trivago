@@ -27,8 +27,11 @@
                             <i class="fas fa-user-plus mr-2"></i>Registrarse
                         </button>
                     </div>
-                    <div id="logged-in-menu" class="hidden">
+                    <div id="logged-in-menu" class="hidden items-center space-x-4">
                         <span id="user-welcome" class="mr-4"></span>
+                        <button id="my-tickets-btn" class="bg-teal-600 hover:bg-teal-700 px-4 py-2 rounded">
+                            <i class="fas fa-ticket-alt mr-2"></i>Mis Boletos
+                        </button>
                         <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-4 py-2 rounded">
                             <i class="fas fa-sign-out-alt mr-2"></i>Cerrar Sesión
                         </button>
@@ -231,6 +234,27 @@
                 </div>
             </div>
         </div>
+        
+        <!-- My Tickets Modal -->
+        <div id="tickets-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
+            <div class="flex items-center justify-center min-h-screen p-4">
+                <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+                    <div class="p-6 border-b">
+                        <div class="flex justify-between items-center">
+                            <h3 class="text-2xl font-bold text-gray-800">
+                                <i class="fas fa-ticket-alt mr-2"></i>Mis Boletos
+                            </h3>
+                            <button id="close-tickets-modal" class="text-gray-500 hover:text-gray-700">
+                                <i class="fas fa-times text-2xl"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="tickets-list" class="p-6 overflow-y-auto space-y-4 bg-gray-50">
+                        <!-- Bookings will be inserted here -->
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- User Authentication Modals -->
         <div id="login-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
@@ -334,6 +358,10 @@
             </div>
         </div>
     </div>
+
+    <!-- JavaScript Libraries for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 
     <!-- JavaScript Files -->
     <script src="js/data.js"></script>
