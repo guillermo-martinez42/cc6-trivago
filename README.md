@@ -69,7 +69,307 @@ proyecto/
 │   └── payment.js         # Procesamiento de pagos
 ├── assets/
 │   └── images/            # Recursos gráficos
-└── README.md              # Este archivo
+└── # Sistema de Reservas de Vuelos - TRIVAGO
+
+Sistema completo de reserva de boletos aéreos con frontend web y backend API REST.
+
+## Características
+
+- ✈️ Búsqueda de vuelos por origen, destino y fecha
+- 💺 Selección visual de asientos
+- 💳 Procesamiento de pagos con tarjeta de crédito
+- 🎫 Generación y descarga de boletos electrónicos
+- 👤 Sistema de autenticación de usuarios
+- 📱 Interfaz responsive y moderna
+
+## Estructura del Proyecto
+
+```
+├── app.py                 # Backend Flask API
+├── index.html            # Frontend principal
+├── css/
+│   └── styles.css       # Estilos personalizados
+├── js/
+│   ├── main.js          # Lógica principal y autenticación
+│   ├── flights.js       # Búsqueda y visualización de vuelos
+│   ├── seats.js         # Selección de asientos
+│   ├── payment.js       # Procesamiento de pagos
+│   └── data.js          # Datos de muestra (aeropuertos, aerolíneas)
+└── schema.txt           # Esquema de base de datos
+
+## Requisitos
+
+### Backend
+- Python 3.8+
+- PostgreSQL 12+
+- pip (gestor de paquetes de Python)
+
+### Frontend
+- Navegador web moderno (Chrome, Firefox, Safari, Edge)
+- Conexión a internet (para cargar CDN de Tailwind CSS y jQuery)
+
+## Instalación
+
+### 1. Configurar el entorno virtual
+
+```bash
+python -m venv venv
+
+# Windows
+venv\Scripts\activate
+
+# Linux/Mac
+source venv/bin/activate
+```
+
+### 2. Instalar dependencias
+
+```bash
+pip install flask flask-bcrypt python-dotenv psycopg2-binary
+```
+
+### 3. Configurar la base de datos
+
+Crear un archivo `.env` en la raíz del proyecto:
+
+```env
+DB_HOST=localhost
+DB_NAME=flight_reservation
+DB_USER=postgres
+DB_PASSWORD=tu_contraseña
+DB_PORT=5432
+```
+
+### 4. Crear las tablas de la base de datos
+
+Ejecutar en PostgreSQL:
+
+```sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    full_name VARCHAR(100) NOT NULL,
+    email VARCHAR(100) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    travel_document VARCHAR(50)
+);
+
+CREATE TABLE bookings (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER REFERENCES users(id),
+    flight_id INTEGER,
+    seat_number VARCHAR(3),
+    ticket_number VARCHAR(20) UNIQUE,
+    booking_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+## Uso
+
+### Iniciar el servidor
+
+```bash
+python app.py
+```
+
+El servidor estará disponible en `http://localhost:5000`
+
+### Acceder a la aplicación
+
+Abrir un navegador y visitar:
+```
+http://localhost:5000
+```
+
+## API Endpoints
+
+### Autenticación
+
+#### Registrar usuario
+```
+POST /api/register
+Content-Type: application/json
+
+{
+  "full_name": "Juan Pérez",
+  "email": "juan@example.com",
+  "password": "password123",
+  "travel_document": "1234567890"
+}
+```
+
+#### Iniciar sesión
+```
+POST /api/login
+Content-Type: application/json
+
+{
+  "email": "juan@example.com",
+  "password": "password123"
+}
+```
+
+### Vuelos
+
+#### Buscar vuelos
+```
+GET /api/flights?origen=GUA&destino=MIA&fecha=20251115&formato=JSON
+```
+
+Respuesta:
+```json
+{
+  "lista_vuelos": {
+    "aerolinea": "AA",
+    "fecha": "20251115",
+    "origen": "GUA",
+    "destino": "MIA",
+    "vuelos": [
+      {
+        "numero": "926",
+        "hora": "0830",
+        "precio": "380.50"
+      }
+    ]
+  }
+}
+```
+
+#### Ver asientos disponibles
+```
+GET /api/seats?aerolinea=AA&vuelo=926&fecha=20251115&formato=JSON
+```
+
+Respuesta:
+```json
+{
+  "lista_asientos": {
+    "aerolinea": "AA",
+    "numero": "926",
+    "fecha": "20251115",
+    "origen": "GUA",
+    "destino": "MIA",
+    "avion": "Boeing 737",
+    "asientos": [
+      {"fila": "1", "posicion": "A"},
+      {"fila": "1", "posicion": "B"}
+    ]
+  }
+}
+```
+
+### Reservas
+
+#### Crear reserva
+```
+GET /api/reserva?aerolinea=AA&vuelo=926&fecha=20251115&asiento=1A&nombre=JuanPerez&formato=JSON
+```
+
+Respuesta:
+```json
+{
+  "boleto": {
+    "aerolinea": "AA",
+    "vuelo": "926",
+    "fecha": "20251115",
+    "horra": "1400",
+    "numero": "ABC123456"
+  }
+}
+```
+
+### Pagos
+
+#### Autorizar pago
+```
+GET /api/autorizacion?tarjeta=1234567812345678&nombre=JUANPEREZ&fecha_venc=202412&num_seguridad=123&monto=600&tienda=TRIVAGO&formato=JSON
+```
+
+Respuesta:
+```json
+{
+  "autorizacion": {
+    "emisor": "VISA",
+    "tarjeta": "1234567812345678",
+    "status": "APROBADO",
+    "numero": "654321"
+  }
+}
+```
+
+## Datos de Prueba
+
+### Tarjeta de crédito de prueba
+- **Número**: 1234567812345678
+- **Titular**: Cualquier nombre
+- **Vencimiento**: 2024-12 (YYYY-MM)
+- **CVV**: 123
+
+### Aeropuertos disponibles
+- GUA - Guatemala City
+- MIA - Miami
+- FLW - Flores
+- LAX - Los Angeles
+- JFK - New York
+- MAD - Madrid
+- MEX - Mexico City
+- PTY - Panama City
+
+## Tecnologías Utilizadas
+
+### Backend
+- **Flask**: Framework web de Python
+- **Flask-Bcrypt**: Encriptación de contraseñas
+- **psycopg2**: Adaptador de PostgreSQL para Python
+- **python-dotenv**: Gestión de variables de entorno
+
+### Frontend
+- **HTML5**: Estructura de la aplicación
+- **Tailwind CSS**: Framework de estilos
+- **jQuery**: Manipulación del DOM y AJAX
+- **Font Awesome**: Iconos
+
+## Estructura de la Base de Datos
+
+### Tabla `users`
+- `id`: ID único del usuario
+- `full_name`: Nombre completo
+- `email`: Correo electrónico (único)
+- `password_hash`: Contraseña encriptada
+- `travel_document`: Documento de viaje
+
+### Tabla `bookings`
+- `id`: ID único de la reserva
+- `user_id`: Referencia al usuario
+- `flight_id`: ID del vuelo
+- `seat_number`: Número de asiento
+- `ticket_number`: Número de boleto (único)
+- `booking_time`: Fecha y hora de la reserva
+
+## Solución de Problemas
+
+### Error de conexión a la base de datos
+1. Verificar que PostgreSQL esté ejecutándose
+2. Confirmar que las credenciales en `.env` sean correctas
+3. Asegurar que la base de datos `flight_reservation` exista
+
+### Error al cargar la página
+1. Verificar que el servidor Flask esté ejecutándose
+2. Comprobar que no haya errores en la consola del servidor
+3. Revisar la consola del navegador para errores de JavaScript
+
+### Pagos denegados
+- Usar la tarjeta de prueba: 1234567812345678
+- Verificar que el formato de fecha sea correcto (YYYY-MM)
+- Asegurar que todos los campos estén completos
+
+## Autores
+
+Proyecto desarrollado para el curso de Ciencias de la Computación VI - Bases de Datos
+
+## Licencia
+
+Este proyecto es de uso académico.
+              # Este archivo
 ```
 
 ## Datos de Muestra

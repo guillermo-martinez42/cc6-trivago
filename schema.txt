@@ -1,0 +1,43 @@
+
+
+### A Proposed Database Schema 
+
+
+Here is a simple but powerful structure:
+
+#### 1. `users` Table
+This table stores information about your registered users. It's very similar to what you proposed.
+
+| Column Name | Data Type | Notes |
+| :--- | :--- | :--- |
+| `id` | `SERIAL PRIMARY KEY` | A unique number for each user, generated automatically. |
+| `full_name` | `VARCHAR(100)` | [cite_start]The user's full name[cite: 13]. |
+| `email` | `VARCHAR(100) UNIQUE` | [cite_start]The user's email, which must be unique[cite: 13]. |
+| `password_hash` | `VARCHAR(255)` | **Important:** We'll store a secure *hash* of the password, not the password itself. |
+| `travel_document` | `VARCHAR(50)` | [cite_start]The user's ID or passport number[cite: 13]. |
+
+#### 2. `flights` Table
+This table will hold all the available flight routes. Storing flights separately means we don't have to re-enter the flight details for every single ticket sold.
+
+| Column Name | Data Type | Notes |
+| :--- | :--- | :--- |
+| `id` | `SERIAL PRIMARY KEY` | A unique number for each flight route. |
+| `flight_number` | [cite_start]`VARCHAR(10)` | e.g., "GU123"[cite: 45]. Combines airline code and number. |
+| `origin` | `VARCHAR(3)` | [cite_start]The 3-letter airport code for the origin (e.g., "GUA")[cite: 44]. |
+| `destination` | `VARCHAR(3)` | [cite_start]The 3-letter airport code for the destination (e.g., "MIA")[cite: 44]. |
+| `departure_time` | `TIMESTAMP` | The full date and time of departure. |
+| `arrival_time` | `TIMESTAMP` | The full date and time of arrival. |
+| `price` | `DECIMAL(10, 2)` | [cite_start]The price of a ticket for this flight[cite: 64]. |
+
+#### 3. `bookings` Table
+This is the most important table! It connects a **user** to a **flight** for a specific **seat**. This is what a "ticket" really represents in the database.
+
+| Column Name | Data Type | Notes |
+| :--- | :--- | :--- |
+| `id` | `SERIAL PRIMARY KEY` | A unique number for each booking. |
+| `user_id` | `INTEGER` | A **foreign key** that points to a user's `id` in the `users` table. |
+| `flight_id` | `INTEGER` | A **foreign key** that points to a flight's `id` in the `flights` table. |
+| `seat_number` | `VARCHAR(3)` | [cite_start]The assigned seat, like "1A" or "20D"[cite: 52]. |
+| `ticket_number` | `VARCHAR(20) UNIQUE` | [cite_start]The unique ticket number we generate after payment[cite: 135]. |
+| `booking_time` | `TIMESTAMP` | When the booking was made. |
+

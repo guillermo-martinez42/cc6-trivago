@@ -108,98 +108,124 @@ function handlePayment(e) {
     const submitBtn = $('#payment-form button[type="submit"]');
     submitBtn.addClass('btn-loading').prop('disabled', true);
     
-    // Simulate payment processing delay
-    setTimeout(() => {
-        // Process payment with DataHelper
-        const authResult = DataHelper.validarTarjeta(
-            cardNumber, 
-            cardHolder, 
-            cardExpiry, 
-            cardCVV, 
-            amount
-        );
-        
-        submitBtn.removeClass('btn-loading').prop('disabled', false);
-        
-        if (authResult.status === 'APROBADO') {
-            // Payment successful - proceed to reservation
-            processReservation(authResult);
-        } else {
-            // Payment failed
-            showToast(authResult.mensaje || 'Pago denegado', 'error');
-            logPaymentAttempt(cardNumber, authResult);
+    // Call backend payment authorization API
+    $.ajax({
+        url: '/api/autorizacion',
+        method: 'GET',
+        data: {
+            tarjeta: cardNumber,
+            nombre: cardHolder,
+            fecha_venc: cardExpiry,
+            num_seguridad: cardCVV,
+            monto: amount,
+            tienda: 'TRIVAGO',
+            formato: 'JSON'
+        },
+        success: function(response) {
+            submitBtn.removeClass('btn-loading').prop('disabled', false);
+            
+            const authResult = response.autorizacion;
+            if (authResult.status === 'APROBADO') {
+                // Payment successful - proceed to reservation
+                processReservation(authResult);
+            } else {
+                // Payment denied
+                showToast('Pago denegado. Verifique su tarjeta.', 'error');
+                logPaymentAttempt(cardNumber, authResult);
+            }
+        },
+        error: function(xhr) {
+            submitBtn.removeClass('btn-loading').prop('disabled', false);
+            const errorMsg = xhr.responseJSON?.error || 'Error al procesar el pago';
+            showToast(errorMsg, 'error');
         }
-    }, 2000);
+    });
 }
 
 // Process flight reservation after successful payment
 function processReservation(authResult) {
     const flight = currentBooking.flight;
+    const formattedDate = flight.fecha.replace(/-/g, '');
     
-    // Reserve seats for each passenger
-    const reservationPromises = currentBooking.selectedSeats.map(seat => {
-        return DataHelper.reservarAsiento(
-            flight.aerolinea,
-            flight.numero,
-            flight.fecha,
-            seat,
-            currentUser.name
-        );
+    // Show loading
+    showLoading();
+    
+    // Reserve each seat with the backend
+    const reservationCalls = currentBooking.selectedSeats.map(seat => {
+        return $.ajax({
+            url: '/api/reserva',
+            method: 'GET',
+            data: {
+                aerolinea: flight.aerolinea,
+                vuelo: flight.numero,
+                fecha: formattedDate,
+                asiento: seat,
+                nombre: (currentUser.full_name || currentUser.name).replace(/\s+/g, ''),
+                formato: 'JSON'
+            }
+        });
     });
     
-    // Check if all reservations were successful
-    const allReservationsSuccessful = reservationPromises.every(result => result.success);
-    
-    if (allReservationsSuccessful) {
-        // Generate tickets
-        const tickets = currentBooking.selectedSeats.map((seat, index) => {
-            const ticketNumber = DataHelper.generarBoleto(flight.aerolinea, flight.numero, flight.fecha);
+    // Wait for all reservations
+    $.when.apply($, reservationCalls).then(
+        function() {
+            hideLoading();
             
-            return {
-                numero: ticketNumber,
-                pasajero: currentUser.name,
-                documento: currentUser.document,
-                vuelo: {
-                    aerolinea: flight.aerolinea_nombre,
-                    codigo_vuelo: `${flight.aerolinea}${flight.numero}`,
-                    origen: flight.origen,
-                    destino: flight.destino,
-                    fecha: flight.fecha,
-                    hora_salida: flight.hora_salida,
-                    duracion: flight.duracion,
-                    avion: flight.avion
-                },
-                asiento: seat,
-                precio: flight.precio,
-                fechaReserva: new Date().toISOString(),
+            // Convert arguments to array (handles single or multiple results)
+            const results = reservationCalls.length === 1 ? [arguments[0]] : 
+                           Array.prototype.slice.call(arguments).map(arg => arg[0]);
+            
+            // Generate tickets from reservation results
+            const tickets = results.map((response, index) => {
+                const boleto = response.boleto;
+                return {
+                    numero: boleto.numero,
+                    pasajero: currentUser.full_name || currentUser.name,
+                    documento: currentUser.travel_document || currentUser.document,
+                    vuelo: {
+                        aerolinea: flight.aerolinea_nombre || flight.aerolinea,
+                        codigo_vuelo: `${flight.aerolinea}${flight.numero}`,
+                        origen: flight.origen,
+                        destino: flight.destino,
+                        fecha: flight.fecha,
+                        hora_salida: flight.hora_salida,
+                        duracion: flight.duracion,
+                        avion: flight.avion
+                    },
+                    asiento: currentBooking.selectedSeats[index],
+                    precio: flight.precio,
+                    fechaReserva: new Date().toISOString(),
+                    autorizacion: authResult.numero,
+                    emisor: authResult.emisor
+                };
+            });
+            
+            // Store tickets in localStorage
+            saveTickets(tickets);
+            
+            // Show confirmation
+            hideModal('#payment-modal');
+            showConfirmation(tickets);
+            
+            // Log successful transaction
+            logTransaction({
+                type: 'COMPRA_BOLETOS',
+                usuario: currentUser.email,
+                vuelo: `${flight.aerolinea}${flight.numero}`,
+                fecha: flight.fecha,
+                asientos: currentBooking.selectedSeats,
+                monto: currentBooking.totalPrice,
                 autorizacion: authResult.numero,
-                emisor: authResult.emisor
-            };
-        });
-        
-        // Store tickets in localStorage (simulate database)
-        saveTickets(tickets);
-        
-        // Show confirmation
-        hideModal('#payment-modal');
-        showConfirmation(tickets);
-        
-        // Log successful transaction
-        logTransaction({
-            type: 'COMPRA_BOLETOS',
-            usuario: currentUser.email,
-            vuelo: `${flight.aerolinea}${flight.numero}`,
-            fecha: flight.fecha,
-            asientos: currentBooking.selectedSeats,
-            monto: currentBooking.totalPrice,
-            autorizacion: authResult.numero,
-            tickets: tickets.map(t => t.numero),
-            timestamp: new Date().toISOString()
-        });
-        
-    } else {
-        showToast('Error al procesar la reserva. Intente nuevamente.', 'error');
-    }
+                tickets: tickets.map(t => t.numero),
+                timestamp: new Date().toISOString()
+            });
+        },
+        function(xhr) {
+            hideLoading();
+            const errorMsg = xhr.responseJSON?.error || 'Error al procesar la reserva';
+            showToast(errorMsg, 'error');
+        }
+    );
 }
 
 // Validation functions

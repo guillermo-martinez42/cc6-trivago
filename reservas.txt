@@ -1,56 +1,56 @@
-**Ingeniería en Sistemas, Informática y Ciencias de la Computación**
-**Ciencias de la Computación VI – Bases de Datos**
+**Ingenierï¿½a en Sistemas, Informï¿½tica y Ciencias de la Computaciï¿½n**
+**Ciencias de la Computaciï¿½n VI ï¿½ Bases de Datos**
 **2/9/2025**
 
 **PROYECTO 1**
 
-El proyecto consiste en la creación de un sistema distribuido de base de datos que permita la
-integración de tres tipos de sitios: Sistemas de Reserva, Administración de Aerolíneas y Emisores de Tarjetas de Crédito con el fin de administrar la venta boletos aéreos. A cada grupo se le asignará uno de los tres tipos de sitio, y su tarea consiste en desarrollar el sistema de acuerdo con la descripción que se dará a continuación el cual deberá integrarlo al resto de sitios. Dado de que se trata de una aplicación académica, vamos a realizar varias suposiciones con el objetivo de simplificar el proyecto.
+El proyecto consiste en la creaciï¿½n de un sistema distribuido de base de datos que permita la
+integraciï¿½n de tres tipos de sitios: Sistemas de Reserva, Administraciï¿½n de Aerolï¿½neas y Emisores de Tarjetas de Crï¿½dito con el fin de administrar la venta boletos aï¿½reos. A cada grupo se le asignarï¿½ uno de los tres tipos de sitio, y su tarea consiste en desarrollar el sistema de acuerdo con la descripciï¿½n que se darï¿½ a continuaciï¿½n el cual deberï¿½ integrarlo al resto de sitios. Dado de que se trata de una aplicaciï¿½n acadï¿½mica, vamos a realizar varias suposiciones con el objetivo de simplificar el proyecto.
 
-Sistema de Reserva: Central Reservation Systems (CRS) Este sistema será la herramienta para la
-venta de los boletos. Dado el lugar de salida, el lugar de llegada y la fecha de partida, deberá verificar sobre todas las aerolíneas los vuelos disponibles. Como resultado de esta consulta deberá generar una vista de estos vuelos para que el usuario escoja el horario y la aerolínea con la que desea viajar. Luego de que el usuario escogió el vuelo deberá mostrar los asientos disponibles para dicho vuelo y después que el usuario elija su asiento deberá realizarse el cobro mediante una tarjeta de crédito y por último emitir el boleto. Es necesario llevar un registro de los usuarios, los datos mínimos que se deben de almacenar son: email, contraseña, nombre, número documento de viaje.
+Sistema de Reserva: Central Reservation Systems (CRS) Este sistema serï¿½ la herramienta para la
+venta de los boletos. Dado el lugar de salida, el lugar de llegada y la fecha de partida, deberï¿½ verificar sobre todas las aerolï¿½neas los vuelos disponibles. Como resultado de esta consulta deberï¿½ generar una vista de estos vuelos para que el usuario escoja el horario y la aerolï¿½nea con la que desea viajar. Luego de que el usuario escogiï¿½ el vuelo deberï¿½ mostrar los asientos disponibles para dicho vuelo y despuï¿½s que el usuario elija su asiento deberï¿½ realizarse el cobro mediante una tarjeta de crï¿½dito y por ï¿½ltimo emitir el boleto. Es necesario llevar un registro de los usuarios, los datos mï¿½nimos que se deben de almacenar son: email, contraseï¿½a, nombre, nï¿½mero documento de viaje.
 
-Aerolínea: Se utiliza para definir las rutas las cuales se identifican por el código de la aerolíneay el
-número de vuelo,además poseen la información del aeropuerto origen, aeropuerto destino, hora de salida, distancia y tiempo de vuelo. Un viaje se identifica por la ruta y la fecha, es labor de la aerolínea asignarle el avión y la tripulación y precio. Se debe almacenar los datos de sus empleados (tripulación), debiendo almacenar nombre, puesto (piloto, copiloto, azafata, etc.), tiempo de pertenecer a la empresa, horas de vuelo, contacto en caso de emergencia, nacionalidad, idiomas que domina (normalmente es más de uno). Para cada aeronave, es necesario contar con los datos básicos, por ejemplo: matrícula, marca, modelo, capacidad tanto de peso, como de pasajeros. También se debe llevar control de la distribución de los asientos los cuales se identifican un numero de fila (1,2,3 ... ) y la posición (A, B, C... ), para esto deberá registrar cuantas filas posee el avión y proveer una imagen donde se muestre dicha información (4 asientos por fila y 20 filas por avión).
+Aerolï¿½nea: Se utiliza para definir las rutas las cuales se identifican por el cï¿½digo de la aerolï¿½neay el
+nï¿½mero de vuelo,ademï¿½s poseen la informaciï¿½n del aeropuerto origen, aeropuerto destino, hora de salida, distancia y tiempo de vuelo. Un viaje se identifica por la ruta y la fecha, es labor de la aerolï¿½nea asignarle el aviï¿½n y la tripulaciï¿½n y precio. Se debe almacenar los datos de sus empleados (tripulaciï¿½n), debiendo almacenar nombre, puesto (piloto, copiloto, azafata, etc.), tiempo de pertenecer a la empresa, horas de vuelo, contacto en caso de emergencia, nacionalidad, idiomas que domina (normalmente es mï¿½s de uno). Para cada aeronave, es necesario contar con los datos bï¿½sicos, por ejemplo: matrï¿½cula, marca, modelo, capacidad tanto de peso, como de pasajeros. Tambiï¿½n se debe llevar control de la distribuciï¿½n de los asientos los cuales se identifican un numero de fila (1,2,3 ... ) y la posiciï¿½n (A, B, C... ), para esto deberï¿½ registrar cuantas filas posee el aviï¿½n y proveer una imagen donde se muestre dicha informaciï¿½n (4 asientos por fila y 20 filas por aviï¿½n).
 
-Tarjeta de Crédito: Está aplicación servirá para la administración de las tarjetas de crédito. Contará
-con las opciones para registro de las tarjetas emitidas: Número, nombre del titular, fecha de vencimiento, número de seguridad, monto autorizado y monto disponible. Además, debe registrar
-todas las transacciones autorizadas para una tarjeta de crédito (consumos y pagos). Cuando reciba una solicitud de autorización verificará que la tarjeta sea válida, que los datos sean correctos, que no
-esté vencida y que tenga disponibilidad, entonces enviará el número de autorización o DENEGADO.
+Tarjeta de Crï¿½dito: Estï¿½ aplicaciï¿½n servirï¿½ para la administraciï¿½n de las tarjetas de crï¿½dito. Contarï¿½
+con las opciones para registro de las tarjetas emitidas: Nï¿½mero, nombre del titular, fecha de vencimiento, nï¿½mero de seguridad, monto autorizado y monto disponible. Ademï¿½s, debe registrar
+todas las transacciones autorizadas para una tarjeta de crï¿½dito (consumos y pagos). Cuando reciba una solicitud de autorizaciï¿½n verificarï¿½ que la tarjeta sea vï¿½lida, que los datos sean correctos, que no
+estï¿½ vencida y que tenga disponibilidad, entonces enviarï¿½ el nï¿½mero de autorizaciï¿½n o DENEGADO.
 
-**Consultas remotas:** Las aerolíneas deberá proveer la información al Sistema de Reserva de los
-vuelos disponibles y los emisores de tarjeta deberán proveer la autorización de compras. Las
-consultas se harán utilizado un WebService (API-REST) implementado mediante llamadas a scripts
-devolverán los resultados usando el estándar XML y JSON.
+**Consultas remotas:** Las aerolï¿½neas deberï¿½ proveer la informaciï¿½n al Sistema de Reserva de los
+vuelos disponibles y los emisores de tarjeta deberï¿½n proveer la autorizaciï¿½n de compras. Las
+consultas se harï¿½n utilizado un WebService (API-REST) implementado mediante llamadas a scripts
+devolverï¿½n los resultados usando el estï¿½ndar XML y JSON.
 
-**Registro de Aerolíneas y Emisor de Tarjeta de Crédito:** Es necesario en cada sistema de
-reservación implementar un mantenimiento para el registro de las aerolíneas y los emisores de tarjeta
-de crédito de modo que conozca el código, nombre, host y el nombre de los scripts que implementan
+**Registro de Aerolï¿½neas y Emisor de Tarjeta de Crï¿½dito:** Es necesario en cada sistema de
+reservaciï¿½n implementar un mantenimiento para el registro de las aerolï¿½neas y los emisores de tarjeta
+de crï¿½dito de modo que conozca el cï¿½digo, nombre, host y el nombre de los scripts que implementan
 las consultas y procesos.
 
 Aerolinea:
 BD Local
 Consulta de vuelos y reserva de boleto
 
-Tarjeta de Crédito:
+Tarjeta de Crï¿½dito:
 BD Local
-Autorización de compras
+Autorizaciï¿½n de compras
 
 Sistema de Reservas:
 BD Local
 
-La consulta de vuelos disponibles debe realizarse sobre todas las aerolíneas y la aprobación del pago con el emisor de la tarjeta de crédito
+La consulta de vuelos disponibles debe realizarse sobre todas las aerolï¿½neas y la aprobaciï¿½n del pago con el emisor de la tarjeta de crï¿½dito
 
-A continuación, aparece el formato de las llamadas a scripts y el formato de los resultados para lo cual deberá cumplir lo siguiente:
+A continuaciï¿½n, aparece el formato de las llamadas a scripts y el formato de los resultados para lo cual deberï¿½ cumplir lo siguiente:
 
-- Aeropuerto es un código de 3 caracteres y aerolínea un código de 2 caracteres (IATA)
-- Números de vuelo es un entero de 3 posiciones.
+- Aeropuerto es un cï¿½digo de 3 caracteres y aerolï¿½nea un cï¿½digo de 2 caracteres (IATA)
+- Nï¿½meros de vuelo es un entero de 3 posiciones.
 - Para las fechas usar el formato yyyymmdd y para las horas hhmm (ISO 8601)
-- En la reservación aparece el nombre del pasajero que reserva el boleto.
-- El identificador de los emisores de tarjeta de crédito 15 caracteres
-- Los números de tarjeta 16 dígitos (sin guiones)
+- En la reservaciï¿½n aparece el nombre del pasajero que reserva el boleto.
+- El identificador de los emisores de tarjeta de crï¿½dito 15 caracteres
+- Los nï¿½meros de tarjeta 16 dï¿½gitos (sin guiones)
 - Para la fecha de vencimiento usar el formato: yyyymm
-- El código de seguridad 3 dígitos
+- El cï¿½digo de seguridad 3 dï¿½gitos
 - Los asientos se identifican desde 1A a 20D.
 
 Para obtener los vuelos disponibles dado origen, destino y fecha del vuelo:
@@ -64,12 +64,12 @@ XML
     <destino>FLW</destino>
     <vuelo>
     <numero>123</numero>
-    <horaz>1400</horaz>
+    <hora>1400</hora>
     <precio>600</precio>
     </vuelo>
     <vuelo>
     <numero>124</numero>
-    <horaz>1800</horaz>
+    <hora>1800</hora>
     <precio>600</precio>
     </vuelo>
     </lista_vuelos>
@@ -133,7 +133,7 @@ JSON
     }
 }
 
-Para obtener el número de boleto asignado:
+Para obtener el nï¿½mero de boleto asignado:
 http://aerolinea.script_reserva?aerolinea=GUA&vuelo=123&fecha=20210824&asiento=1&A&nombre=JuanPerez&formato=JSON
 
 XML
@@ -155,7 +155,7 @@ JSON
     }
 }
 
-Para solicitar la autorización del pago:
+Para solicitar la autorizaciï¿½n del pago:
 http://emisor/autorizacion/?tarjeta=1234987612349876&nombre=JUANPEREZ&fecha\_venc=2022048
 num_seguridad=123&monto=600&tienda=MYBOOKING&formato=JSON
 
@@ -176,9 +176,6 @@ JSON
     }
 }
 
-El status será APROBADO ó DENEGADO, si es denegado el número es 0.
+El status serï¿½ APROBADO ï¿½ DENEGADO, si es denegado el nï¿½mero es 0.
 
-Aspectos Generales:
-1. Fechas de Entrega: 14 de octubre de 2025.
-2. Grupos de 2 integrantes.
-3. El día de la entrega final deberá mostrar funcionando el sistema completo, diagrama E/R y manuales de usuario.
+

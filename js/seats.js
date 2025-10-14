@@ -34,22 +34,54 @@ function showSeatSelection(flight) {
 
 // Generate airplane seat map
 function generateSeatMap(flight) {
-    const config = configuracionAsientos[flight.avion];
-    if (!config) {
-        $('#airplane-seats').html('<p class="text-center text-red-500">Error: Configuración de avión no encontrada</p>');
-        return;
-    }
+    // Show loading state
+    $('#airplane-seats').html('<div class="text-center py-8"><div class="animate-spin text-blue-600 text-4xl mb-4"><i class="fas fa-spinner"></i></div><p class="text-gray-800">Cargando asientos...</p></div>');
     
-    // Get available and occupied seats
-    const asientosDisponibles = DataHelper.getAsientosDisponibles(flight.aerolinea, flight.numero, flight.fecha);
-    const ocupados = asientosOcupados[`${flight.aerolinea}-${flight.numero}-${flight.fecha.replace(/-/g, '')}`] || [];
+    // Convert date from YYYY-MM-DD to YYYYMMDD
+    const formattedDate = flight.fecha.replace(/-/g, '');
+    
+    // Call backend API to get available seats
+    $.ajax({
+        url: '/api/seats',
+        method: 'GET',
+        data: {
+            aerolinea: flight.aerolinea,
+            vuelo: flight.numero,
+            fecha: formattedDate,
+            formato: 'JSON'
+        },
+        success: function(response) {
+            const asientosData = response.lista_asientos;
+            if (asientosData && asientosData.asientos) {
+                renderSeatMap(flight, asientosData.asientos, asientosData.avion);
+            } else {
+                $('#airplane-seats').html('<p class="text-center text-red-500">Error: No se pudieron cargar los asientos</p>');
+            }
+        },
+        error: function(xhr) {
+            $('#airplane-seats').html('<p class="text-center text-red-500">Error al cargar los asientos</p>');
+            showToast('Error al cargar los asientos disponibles', 'error');
+        }
+    });
+}
+
+// Render seat map with available seats from API
+function renderSeatMap(flight, availableSeats, avion) {
+    // Create a set of available seat codes for quick lookup
+    const availableSet = new Set(availableSeats.map(seat => `${seat.fila}${seat.posicion}`));
+    
+    // Create all 80 seats (20 rows x 4 positions)
+    const config = {
+        filas: 20,
+        asientosPorFila: ["A", "B", "C", "D"]
+    };
     
     let seatMapHTML = '<div class="airplane-container">';
     
     // Add airplane header
     seatMapHTML += `
         <div class="text-center mb-6">
-            <h4 class="text-lg font-semibold text-gray-700">${flight.avion}</h4>
+            <h4 class="text-lg font-semibold text-gray-700">${avion || flight.avion}</h4>
             <p class="text-sm text-gray-500">Seleccione ${currentBooking.passengers} asiento${currentBooking.passengers > 1 ? 's' : ''}</p>
         </div>
     `;
@@ -64,9 +96,8 @@ function generateSeatMap(flight) {
         // Seats A and B
         config.asientosPorFila.slice(0, 2).forEach(posicion => {
             const seatCode = `${fila}${posicion}`;
-            const isOccupied = ocupados.includes(seatCode);
-            const isAvailable = !isOccupied;
-            const seatClass = isOccupied ? 'occupied' : 'available';
+            const isAvailable = availableSet.has(seatCode);
+            const seatClass = isAvailable ? 'available' : 'occupied';
             
             seatMapHTML += `
                 <div class="seat ${seatClass}" 
@@ -85,9 +116,8 @@ function generateSeatMap(flight) {
         // Seats C and D
         config.asientosPorFila.slice(2, 4).forEach(posicion => {
             const seatCode = `${fila}${posicion}`;
-            const isOccupied = ocupados.includes(seatCode);
-            const isAvailable = !isOccupied;
-            const seatClass = isOccupied ? 'occupied' : 'available';
+            const isAvailable = availableSet.has(seatCode);
+            const seatClass = isAvailable ? 'available' : 'occupied';
             
             seatMapHTML += `
                 <div class="seat ${seatClass}" 

@@ -109,23 +109,29 @@ function handleLogin(e) {
     
     showLoading();
     
-    // Simulate API call delay
-    setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        const user = users.find(u => u.email === email && u.password === password);
-        
-        hideLoading();
-        
-        if (user) {
-            currentUser = user;
-            localStorage.setItem('currentUser', JSON.stringify(user));
+    // Call backend API
+    $.ajax({
+        url: '/api/login',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            email: email,
+            password: password
+        }),
+        success: function(response) {
+            hideLoading();
+            currentUser = response.user;
+            localStorage.setItem('currentUser', JSON.stringify(response.user));
             updateUserInterface();
             hideModal('#login-modal');
             showToast('Sesión iniciada correctamente', 'success');
-        } else {
-            showToast('Email o contraseña incorrectos', 'error');
+        },
+        error: function(xhr) {
+            hideLoading();
+            const errorMsg = xhr.responseJSON?.error || 'Email o contraseña incorrectos';
+            showToast(errorMsg, 'error');
         }
-    }, 1000);
+    });
 }
 
 function handleRegister(e) {
@@ -138,38 +144,31 @@ function handleRegister(e) {
     
     showLoading();
     
-    // Simulate API call delay
-    setTimeout(() => {
-        const users = JSON.parse(localStorage.getItem('users') || '[]');
-        
-        // Check if user already exists
-        if (users.find(u => u.email === email)) {
+    // Call backend API
+    $.ajax({
+        url: '/api/register',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            full_name: name,
+            email: email,
+            password: password,
+            travel_document: document
+        }),
+        success: function(response) {
             hideLoading();
-            showToast('Este email ya está registrado', 'error');
-            return;
+            showToast('Cuenta creada correctamente. Por favor inicie sesión.', 'success');
+            hideModal('#register-modal');
+            showModal('#login-modal');
+            // Pre-fill login form
+            $('#login-email').val(email);
+        },
+        error: function(xhr) {
+            hideLoading();
+            const errorMsg = xhr.responseJSON?.error || 'Error al crear la cuenta';
+            showToast(errorMsg, 'error');
         }
-        
-        // Create new user
-        const newUser = {
-            id: Date.now().toString(),
-            name,
-            email,
-            password,
-            document,
-            registeredAt: new Date().toISOString()
-        };
-        
-        users.push(newUser);
-        localStorage.setItem('users', JSON.stringify(users));
-        
-        currentUser = newUser;
-        localStorage.setItem('currentUser', JSON.stringify(newUser));
-        
-        hideLoading();
-        updateUserInterface();
-        hideModal('#register-modal');
-        showToast('Cuenta creada correctamente', 'success');
-    }, 1000);
+    });
 }
 
 function logout() {
@@ -191,7 +190,7 @@ function updateUserInterface() {
     if (currentUser) {
         $('#guest-menu').hide();
         $('#logged-in-menu').show();
-        $('#user-welcome').text(`Bienvenido, ${currentUser.name}`);
+        $('#user-welcome').text(`Bienvenido, ${currentUser.full_name || currentUser.name}`);
     } else {
         $('#guest-menu').show();
         $('#logged-in-menu').hide();
@@ -225,16 +224,54 @@ function handleFlightSearch(e) {
     
     showLoading();
     
-    // Simulate API call delay
-    setTimeout(() => {
-        const flights = DataHelper.buscarVuelos(origin, destination, date);
-        displayFlightResults(flights, passengers);
-        hideLoading();
-        
-        if (flights.length === 0) {
-            showToast('No se encontraron vuelos para la fecha seleccionada', 'info');
+    // Convert date from YYYY-MM-DD to YYYYMMDD
+    const formattedDate = date.replace(/-/g, '');
+    
+    // Call backend API
+    $.ajax({
+        url: '/api/flights',
+        method: 'GET',
+        data: {
+            origen: origin,
+            destino: destination,
+            fecha: formattedDate,
+            formato: 'JSON'
+        },
+        success: function(response) {
+            hideLoading();
+            // Extract flights from response
+            const vuelosData = response.lista_vuelos;
+            if (vuelosData && vuelosData.vuelos) {
+                // Transform API response to match frontend format
+                const flights = vuelosData.vuelos.map(vuelo => ({
+                    aerolinea: vuelosData.aerolinea,
+                    aerolinea_nombre: vuelosData.aerolinea, // Will use mock name for now
+                    numero: vuelo.numero,
+                    origen: vuelosData.origen,
+                    destino: vuelosData.destino,
+                    hora_salida: vuelo.hora,
+                    duracion: '03:00', // Mock duration
+                    precio: parseFloat(vuelo.precio),
+                    avion: 'Boeing 737',
+                    fecha: date
+                }));
+                
+                displayFlightResults(flights, passengers);
+                
+                if (flights.length === 0) {
+                    showToast('No se encontraron vuelos para la fecha seleccionada', 'info');
+                }
+            } else {
+                showToast('No se encontraron vuelos', 'info');
+                displayFlightResults([], passengers);
+            }
+        },
+        error: function(xhr) {
+            hideLoading();
+            const errorMsg = xhr.responseJSON?.error || 'Error al buscar vuelos';
+            showToast(errorMsg, 'error');
         }
-    }, 1500);
+    });
 }
 
 function displayFlightResults(flights, passengers) {
